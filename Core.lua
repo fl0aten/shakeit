@@ -307,13 +307,25 @@ local function triggerShake()
     isShaking = true
     local updateInterval = 0.02
 
+    -- Collect ALL anchor points for each frame (not just the first one)
     local originalPositions = {}
     for i, frame in ipairs(shakeableFrames) do
-        local success, p1, parent, anchor, x, y = pcall(function()
-            return frame:GetPoint(1)
-        end)
-        if success and p1 then
-            originalPositions[i] = {p1, parent, anchor, x, y}
+        originalPositions[i] = {}
+        for anchorIndex = 1, 6 do  -- WoW frames can have up to 6 anchor points
+            local success, point, relativeTo, relativePoint, x, y = pcall(function()
+                return frame:GetPoint(anchorIndex)
+            end)
+            if success and point then
+                table.insert(originalPositions[i], {
+                    point = point,
+                    relativeTo = relativeTo,
+                    relativePoint = relativePoint,
+                    x = x,
+                    y = y
+                })
+            else
+                break  -- No more anchors
+            end
         end
     end
 
@@ -342,22 +354,32 @@ local function triggerShake()
                 local randomY = math.random(-100, 100) / maxOffset * 3
 
                 for i, frame in ipairs(shakeableFrames) do
-                    local orig = originalPositions[i]
-                    if orig then
+                    local anchors = originalPositions[i]
+                    if anchors and #anchors > 0 then
                         pcall(function()
                             frame:ClearAllPoints()
-                            frame:SetPoint(orig[1], orig[2], orig[3],
-                                         orig[4] + randomX, orig[5] + randomY)
+                            -- Restore all anchors, but only offset the first one
+                            for anchorIndex, anchor in ipairs(anchors) do
+                                local offsetX, offsetY = anchor.x, anchor.y
+                                if anchorIndex == 1 then
+                                    offsetX = offsetX + randomX
+                                    offsetY = offsetY + randomY
+                                end
+                                frame:SetPoint(anchor.point, anchor.relativeTo, anchor.relativePoint, offsetX, offsetY)
+                            end
                         end)
                     end
                 end
             else
                 for i, frame in ipairs(shakeableFrames) do
-                    local orig = originalPositions[i]
-                    if orig then
+                    local anchors = originalPositions[i]
+                    if anchors and #anchors > 0 then
                         pcall(function()
                             frame:ClearAllPoints()
-                            frame:SetPoint(orig[1], orig[2], orig[3], orig[4], orig[5])
+                            -- Restore all original anchors
+                            for _, anchor in ipairs(anchors) do
+                                frame:SetPoint(anchor.point, anchor.relativeTo, anchor.relativePoint, anchor.x, anchor.y)
+                            end
                         end)
                     end
                 end
