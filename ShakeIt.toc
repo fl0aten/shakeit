@@ -1,6 +1,6 @@
-## Interface: 11508
+## Interface: 11508, 20505
 ## Title: ShakeIt
-## Version: 1.0.0
+## Version: 1.2.0
 ## Author: fl0aten
 ## Notes: ShakeIt adds visceral feedback to your combat — every time you crit (damage or healing), your UI elements shake briefly.
 ## X-Website: https://github.com/fl0aten
